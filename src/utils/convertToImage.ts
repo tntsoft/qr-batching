@@ -51,28 +51,33 @@ export async function copyImageToClipboard(element: HTMLElement, options: Option
 
 export function downloadPngElement(element: HTMLElement, filename: string, options: Options) {
   const formattedOptions = getFormattedOptions(element, options)
-  return domtoimage.toPng(element, formattedOptions).then((dataUrl: string) => {
-    return new Promise((resolve) => {
-      const link = document.createElement('a')
-      link.href = dataUrl
-      link.download = filename
-      link.click()
-      resolve()
-    })
+  domtoimage.toPng(element, formattedOptions).then((dataUrl: string) => {
+    const link = document.createElement('a')
+    link.href = dataUrl
+    link.download = filename
+    link.click()
   })
 }
 
-export function downloadSvgElement(element: HTMLElement, filename: string, options: Options) {
-  const formattedOptions = getFormattedOptions(element, options)
-  domtoimage
-    .toSvg(element, formattedOptions)
-    .then((dataUrl: string) => {
-      const link = document.createElement('a')
-      link.href = dataUrl
-      link.download = filename
+export async function downloadSvgElement(
+  element: HTMLElement,
+  filename: string,
+  options: Options
+): Promise<void> {
+  try {
+    const formattedOptions = getFormattedOptions(element, options)
+    const dataUrl = await domtoimage.toSvg(element, formattedOptions)
+
+    const link = document.createElement('a')
+    link.href = dataUrl
+    link.download = filename
+
+    // resolve after the link is clicked
+    await new Promise((resolve) => {
+      link.addEventListener('click', resolve, { once: true })
       link.click()
     })
-    .catch((error: Error) => {
-      console.error('Error converting element to SVG:', error)
-    })
+  } catch (error) {
+    console.error('Error converting element to SVG:', error)
+  }
 }
